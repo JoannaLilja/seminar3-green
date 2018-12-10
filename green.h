@@ -26,6 +26,11 @@ typedef struct green_cond_t
   struct green_t *lastt;
 } green_cond_t;
 
+void init();
+
+//static void init() __attribute__ (( constructor ));
+
+
 int green_create(green_t *thread, void *(*fun)(void*), void *arg);
 int green_yield();
 int green_join(green_t *thread);

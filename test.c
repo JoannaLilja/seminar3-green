@@ -32,7 +32,7 @@ void *test2 (void *arg)
       flag = ( id + 1) % 2;
       //printf(" flag: %d\n" , flag);
       green_cond_signal(&cond);
-      green_yield();//<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      //green_yield();//<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     }
     else green_cond_wait(&cond);
@@ -65,6 +65,7 @@ void test()
 
 int main()
 {
+  init();
   test();
 
   return 0;

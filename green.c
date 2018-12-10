@@ -2,11 +2,18 @@
 #include <ucontext.h>
 #include <assert.h>
 #include <stdio.h>
+#include <signal.h>
+#include <sys/time.h>
 #include "green.h"
 
 #define FALSE 0
 #define TRUE 1
 #define STACK_SIZE 4096
+
+#define PERIOD 100
+
+static sigset_t block;
+void timer_handler(int);
 
 static ucontext_t main_cntx = {0};
 static green_t main_green= {&main_cntx, NULL, NULL, NULL, NULL, FALSE};
@@ -48,6 +55,23 @@ green_t *ready_dequeue()
   return result;
 }
 
+// ---------Timer------------------
+void timer_handler(int sig)
+{
+  // --add the running to the ready queue--
+  ready_enqueue(running);
+  // --------------------------------------
+
+  // --find the next thread for execution--
+  green_t *next = ready_dequeue();
+  // --------------------------------------
+
+  running = next;
+  swapcontext(running->context, next->context);
+  //swapcontext(susp->context, next->context);
+
+}
+
 // ------------Other----------------
 
 void addtojoin(green_t *addTo, green_t *addThis)
@@ -84,6 +108,21 @@ void init()
 {
   getcontext(&main_cntx);
 
+  sigemptyset(&block);
+  sigaddset(&block, SIGVTALRM);
+
+  struct sigaction act = {0};
+  struct timeval interval;
+  struct itimerval period;
+
+  act.sa_handler = timer_handler;
+  assert(sigaction(SIGVTALRM, &act, NULL) == 0 );
+  interval.tv_sec = 0;
+  interval.tv_usec = PERIOD;
+  period.it_interval = interval;
+  period.it_value = interval;
+  setitimer(ITIMER_VIRTUAL, &period, NULL);
+
 }
 
 
@@ -104,11 +143,6 @@ void green_thread()
     // --free allocated memory structures--
     free(running->context->uc_stack.ss_sp);
     free(running->context);
-
-    //<<<<< double free or corrupt (out)
-    //Program received signal SIGABRT, Aborted.
-    //__GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:5151
-    //	../sysdeps/unix/sysv/linux/raise.c: No such file or directory.
     // ------------------------------------
 
 
