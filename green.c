@@ -22,7 +22,6 @@ static green_t *waiting_queue_last;
 
 static void init() __attribute__ (( constructor ));
 
-
 // --------Queue Functions----------
 void ready_enqueue(green_t *entry)
 {
@@ -36,6 +35,9 @@ void ready_enqueue(green_t *entry)
   ready_queue_last = entry;
 }
 
+// To do: if list has only one item, remove it and set first and last to null.
+// if queue is empty, we return null -> is that okay?
+// dont we need to set next to null
 green_t *ready_dequeue()
 {
   green_t *result = ready_queue_first;
@@ -64,7 +66,7 @@ void addtojoin(green_t *addTo, green_t *addThis)
 
 }
 
-
+// To do: cancel the link in thread->join after adding to queue
 void placeJoinInQueue(green_t *thread)
 {
   if(thread->join!=NULL)
@@ -96,6 +98,7 @@ void green_thread()
     // -------------------------------------------------
 
 
+    // To do free running->context->uc_stack.ss_sp then running->context
     // --free allocated memory structures--
     free(running); //<<<<< double free or corrupt (out)
                 //Program received signal SIGABRT, Aborted.
@@ -114,7 +117,7 @@ void green_thread()
     // -------------------------------
 
     if(next==NULL)
-    next=&main_green;
+      next=&main_green;
     running = next;
     setcontext(next->context);
 
