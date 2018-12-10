@@ -39,14 +39,20 @@ void ready_enqueue(green_t *entry)
   }
 }
 
-// To do: if list has only one item, remove it and set first and last to null.
-// if queue is empty, we return null -> is that okay?
-// dont we need to set next to null
 green_t *ready_dequeue()
 {
   green_t *result = ready_queue_first;
-  if(ready_queue_first!= NULL && ready_queue_first->next!=NULL)
-    ready_queue_first = ready_queue_first->next;
+  if (ready_queue_first != NULL) {
+      if (result->next!=NULL) {
+          ready_queue_first = result->next;
+      } else {
+          ready_queue_first = NULL;
+          ready_queue_last = NULL;
+      }
+  }
+
+  if (result != NULL)
+    result->next = NULL;
   return result;
 }
 
@@ -70,11 +76,13 @@ void addtojoin(green_t *addTo, green_t *addThis)
 
 }
 
-// To do: cancel the link in thread->join after adding to queue
 void placeJoinInQueue(green_t *thread)
 {
-  if(thread->join!=NULL)
+  if (thread->join == NULL)
+      return;
+
   ready_enqueue(thread->join);
+  thread->join = NULL;
 }
 
 //-------------GREEN--------------
@@ -103,7 +111,6 @@ void green_thread()
     // -------------------------------------------------
 
 
-    // To do free running->context->uc_stack.ss_sp then running->context
     // --free allocated memory structures--
     free(running->context->uc_stack.ss_sp);
     free(running->context);
