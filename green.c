@@ -58,6 +58,9 @@ green_t *ready_dequeue()
 // ---------Timer------------------
 void timer_handler(int sig)
 {
+
+  printf("handelr reached");
+  /*
   // --add the running to the ready queue--
   ready_enqueue(running);
   // --------------------------------------
@@ -68,7 +71,8 @@ void timer_handler(int sig)
 
   running = next;
   swapcontext(running->context, next->context);
-  //swapcontext(susp->context, next->context);
+  //swapcontext(susp->context, next->context);*/
+  green_yield();
 
 }
 
@@ -107,6 +111,8 @@ void placeJoinInQueue(green_t *thread)
 void init()
 {
   getcontext(&main_cntx);
+
+  printf("init\n");
 
   sigemptyset(&block);
   sigaddset(&block, SIGVTALRM);
