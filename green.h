@@ -26,7 +26,7 @@ typedef struct green_cond_t
   struct green_t *lastt;
 } green_cond_t;
 
-void init();
+//void init();
 
 //static void init() __attribute__ (( constructor ));
 

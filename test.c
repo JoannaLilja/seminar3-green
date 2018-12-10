@@ -65,7 +65,6 @@ void test()
 
 int main()
 {
-  init();
   test();
 
   return 0;
