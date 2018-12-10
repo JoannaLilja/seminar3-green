@@ -20,7 +20,7 @@ void *test2 (void *arg)
 {
   green_cond_init(&cond);
   int id = *(int*) arg;
-  int loop = 4;
+  int loop = 10;
   while ( loop > 0)
   {
 
@@ -32,13 +32,13 @@ void *test2 (void *arg)
       flag = ( id + 1) % 2;
       //printf(" flag: %d\n" , flag);
       green_cond_signal(&cond);
+
+      //while (1) { }
       //green_yield();//<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     }
     else green_cond_wait(&cond);
-
     //printf(" id: %d\n" , id);
-
   }
 }
 

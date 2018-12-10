@@ -20,6 +20,7 @@ typedef struct thread_queue
   struct green_t *this;
   struct green_t *next;
 } thread_queue;
+
 typedef struct green_cond_t
 {
   struct green_t *firstt;
