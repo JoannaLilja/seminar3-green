@@ -12,8 +12,8 @@ static ucontext_t main_cntx = {0};
 static green_t main_green= {&main_cntx, NULL, NULL, NULL, NULL, FALSE};
 static green_t *running = &main_green;
 
-static green_t *ready_queue_first;
-static green_t *ready_queue_last;
+static green_t *ready_queue_first = NULL;
+static green_t *ready_queue_last = NULL;
 
 static green_t *waiting_queue_first;
 static green_t *waiting_queue_last;
@@ -26,14 +26,18 @@ static void init() __attribute__ (( constructor ));
 // --------Queue Functions----------
 void ready_enqueue(green_t *entry)
 {
-  if(ready_queue_last!= NULL)
+  if(ready_queue_last!= NULL && ready_queue_first!=NULL)
   {
+    //printf("%p\n", ready_queue_last->next);
+    green_t *p = ready_queue_last->next;
     ready_queue_last->next = entry;
     ready_queue_last = entry;
-    return;
   }
-  ready_queue_first = entry;
-  ready_queue_last = entry;
+  else
+  {
+    ready_queue_first = entry;
+    ready_queue_last = entry;
+  }
 }
 
 green_t *ready_dequeue()
@@ -79,6 +83,7 @@ void placeJoinInQueue(green_t *thread)
 void init()
 {
   getcontext(&main_cntx);
+
 }
 
 
@@ -97,10 +102,13 @@ void green_thread()
 
 
     // --free allocated memory structures--
-    free(running); //<<<<< double free or corrupt (out)
-                //Program received signal SIGABRT, Aborted.
-                //__GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:5151
-                //	../sysdeps/unix/sysv/linux/raise.c: No such file or directory.
+    free(running->context->uc_stack.ss_sp);
+    free(running->context);
+
+    //<<<<< double free or corrupt (out)
+    //Program received signal SIGABRT, Aborted.
+    //__GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:5151
+    //	../sysdeps/unix/sysv/linux/raise.c: No such file or directory.
     // ------------------------------------
 
 
@@ -196,4 +204,57 @@ int green_join (green_t *thread) {
   swapcontext(susp->context, next->context);
 
   return 0;
+}
+
+
+// initialize a green condition variable
+void green_cond_init(green_cond_t* cond)
+{
+  cond = (green_cond_t* )malloc(sizeof(green_cond_t));
+  //cond->threadqueue = (thread_queue*)malloc(sizeof(thread_queue));
+  //cond->threadqueue = (thread_queue*)malloc(sizeof(thread_queue));
+
+  //cond->threadqueue->this = (green_t*)malloc(sizeof(green_t*));
+  //cond->threadqueue->next = (green_t*)malloc(sizeof(green_t*));
+
+  //cond->lastelement->this = (green_t*)malloc(sizeof(green_t*));
+  //cond->lastelement->next = (green_t*)malloc(sizeof(green_t*));
+
+  //*cond = (green_cond_t){NULL,NULL};
+
+
+
+  //cond->threadqueue-thia = (thread_queue*)malloc(sizeof(thread_queue));
+
+}
+
+// suspend the current thread on the condition
+void green_cond_wait(green_cond_t* cond)
+{
+  if(cond->lastt != running)
+  {
+    if(cond->firstt==NULL)
+      cond->firstt = running;//(thread_queue*)1;
+    else
+      cond->lastt->condnext = running;
+
+    cond->lastt = running;
+  }
+  //green_cond_signal(cond);//
+
+}
+
+// move the first suspended thread to the ready queue
+void green_cond_signal(green_cond_t* cond)
+{
+  if(cond->firstt==NULL)
+  {
+    //printf("tried to signal but there were no suspended threads");
+    return;
+  }
+
+  ready_enqueue(cond->firstt);
+
+  cond->firstt = cond->firstt->condnext;
+
 }
