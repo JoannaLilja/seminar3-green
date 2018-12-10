@@ -22,7 +22,6 @@ static green_t *waiting_queue_last;
 
 static void init() __attribute__ (( constructor ));
 
-
 // --------Queue Functions----------
 void ready_enqueue(green_t *entry)
 {
@@ -43,8 +42,17 @@ void ready_enqueue(green_t *entry)
 green_t *ready_dequeue()
 {
   green_t *result = ready_queue_first;
-  if(ready_queue_first!= NULL && ready_queue_first->next!=NULL)
-    ready_queue_first = ready_queue_first->next;
+  if (ready_queue_first != NULL) {
+      if (result->next!=NULL) {
+          ready_queue_first = result->next;
+      } else {
+          ready_queue_first = NULL;
+          ready_queue_last = NULL;
+      }
+  }
+
+  if (result != NULL)
+    result->next = NULL;
   return result;
 }
 
@@ -68,11 +76,13 @@ void addtojoin(green_t *addTo, green_t *addThis)
 
 }
 
-
 void placeJoinInQueue(green_t *thread)
 {
-  if(thread->join!=NULL)
+  if (thread->join == NULL)
+      return;
+
   ready_enqueue(thread->join);
+  thread->join = NULL;
 }
 
 //-------------GREEN--------------
@@ -122,7 +132,7 @@ void green_thread()
     // -------------------------------
 
     if(next==NULL)
-    next=&main_green;
+      next=&main_green;
     running = next;
     setcontext(next->context);
 
