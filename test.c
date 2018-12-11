@@ -18,9 +18,8 @@ green_cond_t cond;
 
 void *test2 (void *arg)
 {
-  green_cond_init(&cond);
   int id = *(int*) arg;
-  int loop = 10;
+  int loop = 10000;
   while ( loop > 0)
   {
 
@@ -30,15 +29,13 @@ void *test2 (void *arg)
       printf (" thread %d: %d\n" , id, loop);
       loop--;
       flag = ( id + 1) % 2;
-      //printf(" flag: %d\n" , flag);
       green_cond_signal(&cond);
-
-      //while (1) { }
-      //green_yield();//<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     }
-    else green_cond_wait(&cond);
-    //printf(" id: %d\n" , id);
+    else {
+      //green_cond_signal(&cond);
+      printf("id: %d | flag: %d\n", id, flag);
+      green_cond_wait(&cond);
+    }
   }
 }
 
@@ -65,6 +62,7 @@ void test()
 
 int main()
 {
+  green_cond_init(&cond);
   test();
 
   return 0;

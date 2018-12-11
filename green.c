@@ -66,8 +66,7 @@ green_t *ready_dequeue()
 // ---------Timer------------------
 void timer_handler(int sig)
 {
-
-  printf("handelr reached");
+  printf("handelr reached\n");
   /*
   // --add the running to the ready queue--
   ready_enqueue(running);
@@ -120,11 +119,9 @@ void placeJoinInQueue(green_t *thread)
 // for the first time the running thread will be properly initialized.
 void init()
 {
-  getcontext(&main_cntx);
-
   printf("init\n");
 
-  sigemptyset(&block);
+ sigemptyset(&block);
   sigaddset(&block, SIGVTALRM);
 
   struct sigaction act = {0};
@@ -139,6 +136,7 @@ void init()
   period.it_value = interval;
   setitimer(ITIMER_VIRTUAL, &period, NULL);
 
+  getcontext(&main_cntx);
 }
 
 
@@ -146,7 +144,6 @@ void init()
 //turning from the call, terminate the thread.
 void green_thread()
 {
-
     green_t *this = running;
 
     (*this->fun)(this->arg);
@@ -205,9 +202,7 @@ int green_create(green_t *new, void *(*fun) (void*) , void *arg)
   // --add new to the ready queue--
   ready_enqueue(new);
   // ------------------------------
-
   return 0;
-
 }
 
 // Put the running thread last in the ready queue and then select the first
@@ -258,40 +253,25 @@ int green_join (green_t *thread) {
 
 
 // initialize a green condition variable
-void green_cond_init(green_cond_t* cond)
-{
-  cond = (green_cond_t* )malloc(sizeof(green_cond_t));
-  //cond->threadqueue = (thread_queue*)malloc(sizeof(thread_queue));
-  //cond->threadqueue = (thread_queue*)malloc(sizeof(thread_queue));
-
-  //cond->threadqueue->this = (green_t*)malloc(sizeof(green_t*));
-  //cond->threadqueue->next = (green_t*)malloc(sizeof(green_t*));
-
-  //cond->lastelement->this = (green_t*)malloc(sizeof(green_t*));
-  //cond->lastelement->next = (green_t*)malloc(sizeof(green_t*));
-
-  //*cond = (green_cond_t){NULL,NULL};
-
-
-
-  //cond->threadqueue-thia = (thread_queue*)malloc(sizeof(thread_queue));
-
+void green_cond_init(green_cond_t* cond) {
+  cond = (green_cond_t *) malloc(sizeof(green_cond_t));
 }
 
 // suspend the current thread on the condition
 void green_cond_wait(green_cond_t* cond)
 {
-  if(cond->lastt != running)
-  {
-    if(cond->firstt==NULL)
-      cond->firstt = running;//(thread_queue*)1;
+    if (cond->firstt == NULL)
+      cond->firstt = running;
     else
-      cond->lastt->condnext = running;
+      cond->lastt->next = running;
 
     cond->lastt = running;
-  }
-  //green_cond_signal(cond);//
 
+    green_t *susp = running;
+    green_t *next = ready_dequeue();
+    running = next;
+
+    swapcontext(susp->context, next->context);
 }
 
 // move the first suspended thread to the ready queue
@@ -303,8 +283,29 @@ void green_cond_signal(green_cond_t* cond)
     return;
   }
 
-  ready_enqueue(cond->firstt);
+  green_t *next = cond->firstt;
+  if (next != NULL) {
+    cond->firstt = cond->firstt->next;
+    next->next = NULL;
+  }
+  ready_enqueue(next);
+}
 
-  cond->firstt = cond->firstt->condnext;
+void green_block_timer() {
+    if (sigprocmask(SIG_BLOCK, &block, NULL) == 0) {
+      //printf("Blocked timer.\n");
+      return;
+    }
 
+
+    printf("Error blocking timer.\n");
+}
+
+void green_unblock_timer() {
+  if (sigprocmask(SIG_UNBLOCK, &block, NULL) == 0) {
+    //printf("Unblocked timer.\n");
+    return;
+  }
+
+  printf("Error blocking timer.\n");
 }
