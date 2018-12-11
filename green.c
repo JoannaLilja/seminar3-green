@@ -68,7 +68,7 @@ void cond_enqueue(green_cond_t *cond, green_t *entry)
   if(cond->lastt != NULL)
   {
     //printf("%p\n", ready_queue_last->next);
-    cond->lastt->condnext = entry;
+    cond->lastt->next = entry;
     cond->lastt = entry;
   }
   else
@@ -82,15 +82,15 @@ green_t *cond_dequeue(green_cond_t *cond)
 {
   green_t *result = cond->firstt;
   if (cond->firstt != NULL) {
-      if (result->condnext!=NULL) {
-          cond->firstt = result->condnext;
+      if (result->next!=NULL) {
+          cond->firstt = result->next;
       } else {
           cond->firstt = NULL;
           cond->lastt = NULL;
       }
   }
   if (result != NULL)
-    result->condnext = NULL;
+    result->next = NULL;
   return result;
 }
 
