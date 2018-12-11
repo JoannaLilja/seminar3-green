@@ -7,7 +7,7 @@ typedef struct green_t
   struct green_t *next;
   struct green_t *join;
   struct green_t *joinnext;
-  struct green_t *condnext;
+  //struct green_t *condnext;
 
   int zombie;
 } green_t;
@@ -39,3 +39,6 @@ int green_join(green_t *thread);
 void green_cond_init(green_cond_t* cond);
 void green_cond_wait(green_cond_t* cond);
 void green_cond_signal(green_cond_t* cond);
+
+void green_block_timer();
+void green_unblock_timer();
