@@ -63,6 +63,37 @@ green_t *ready_dequeue()
   return result;
 }
 
+void cond_enqueue(green_cond_t *cond, green_t *entry)
+{
+  if(cond->lastt != NULL)
+  {
+    //printf("%p\n", ready_queue_last->next);
+    cond->lastt->condnext = entry;
+    cond->lastt = entry;
+  }
+  else
+  {
+    cond->firstt = entry;
+    cond->lastt = entry;
+  }
+}
+
+green_t *cond_dequeue(green_cond_t *cond)
+{
+  green_t *result = cond->firstt;
+  if (cond->firstt != NULL) {
+      if (result->condnext!=NULL) {
+          cond->firstt = result->condnext;
+      } else {
+          cond->firstt = NULL;
+          cond->lastt = NULL;
+      }
+  }
+  if (result != NULL)
+    result->condnext = NULL;
+  return result;
+}
+
 // ---------Timer------------------
 void timer_handler(int sig)
 {
@@ -260,8 +291,18 @@ void green_cond_init(green_cond_t* cond) {
 // suspend the current thread on the condition
 void green_cond_wait(green_cond_t* cond)
 {
-    if (cond->firstt == NULL)
-      cond->firstt = running;
+  cond_enqueue(cond, running);
+
+  green_t *susp = running;
+  green_t *next = ready_dequeue();
+  running = next;
+
+  swapcontext(susp->context, next->context);
+
+  /*if(cond->lastt != running)
+  {
+    if(cond->firstt==NULL)
+      cond->firstt = running;//(thread_queue*)1;
     else
       cond->lastt->next = running;
 
@@ -270,14 +311,24 @@ void green_cond_wait(green_cond_t* cond)
     green_t *susp = running;
     green_t *next = ready_dequeue();
     running = next;
-
-    swapcontext(susp->context, next->context);
+  }
+  */
 }
 
 // move the first suspended thread to the ready queue
 void green_cond_signal(green_cond_t* cond)
 {
-  if(cond->firstt==NULL)
+
+  green_t *res = cond_dequeue(cond);
+
+  if (res == NULL)
+  {
+    return;
+  }
+
+  ready_enqueue(res);
+
+  /*if(cond->firstt==NULL)
   {
     //printf("tried to signal but there were no suspended threads");
     return;
@@ -289,6 +340,8 @@ void green_cond_signal(green_cond_t* cond)
     next->next = NULL;
   }
   ready_enqueue(next);
+   */
+
 }
 
 void green_block_timer() {
@@ -296,7 +349,6 @@ void green_block_timer() {
       //printf("Blocked timer.\n");
       return;
     }
-
 
     printf("Error blocking timer.\n");
 }

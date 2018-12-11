@@ -41,6 +41,8 @@ void *test2 (void *arg)
 
 void test()
 {
+  green_cond_init(&cond);
+
   green_t g0, g1;
   int a0 = 0;
   int a1 = 1;
