@@ -6,8 +6,7 @@
 #include <sys/time.h>
 #include "green.h"
 
-#define FALSE 0
-#define TRUE 1
+
 #define STACK_SIZE 4096
 
 #define PERIOD 100
@@ -407,6 +406,32 @@ int green_mutex_unlock(green_mutex_t *mutex) {
     mutex->taken = FALSE;
     green_unblock_timer();
     return 0;
+}
+
+int green_cond_wait_lock(green_cond_t* cond, green_mutex_t *mutex)
+{
+    green_block_timer();
+    green_t *susp = running;
+    pushCondQ(susp, cond);
+    if (mutex != NULL) {
+        mutex->taken = FALSE;
+        green_t *suspList = popReadyQ(mutex);
+        pushReadyQ(suspList);
+        mutex->susp = NULL;
+    }
+    runNextGreen();
+    swapcontext(susp->context, running->context);
+
+    if (mutex != NULL) {
+        while (mutex->taken) {
+            pushMutexQ(running, mutex);
+            runNextGreen();
+            swapcontext(susp->context, running->context);
+        }
+
+        mutex->taken = TRUE;
+    }
+    green_unblock_timer();
 }
 
 void green_block_timer() {
