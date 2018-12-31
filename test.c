@@ -62,13 +62,13 @@ void *testCounter(void *arg) {
 int cell = 0;
 int productions = 0;
 void *producer(void *arg) {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 10000; i++) {
     while (cell == 1)
         green_cond_wait_lock(&cond, &mutex);
 
     cell = 1;
     productions++;
-    printf("Produced!\n");
+    //printf("Produced!\n");
     green_cond_signal(&cond);
     green_mutex_unlock(&mutex);
   }
@@ -76,13 +76,13 @@ void *producer(void *arg) {
 
 int consumptions = 0;
 void *consumer(void *arg) {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 10000; i++) {
     while (cell == 0)
       green_cond_wait_lock(&cond, &mutex);
 
     cell = 0;
     consumptions++;
-    printf("Consumed!\n");
+   // printf("Consumed!\n");
     green_cond_signal(&cond);
     green_mutex_unlock(&mutex);
   }
